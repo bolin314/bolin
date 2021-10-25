@@ -1,0 +1,210 @@
+<!DOCTYPE HTML>
+<!--
+	Stellar by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>DIY Self-driving Car</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+	</head>
+	<body class="is-preload">
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+				<!-- Header -->
+					<header id="header">
+						<h1>Autonomous Driving Algorithms on DIY Self-driving Car "WillowCar"</h1>
+						<h2 style="text-align:center">May. 2020 - Dec. 2020</h2>
+						<p>Designed and 3D printed a Raspberry Pi 4-based self-driving car with monocular camera. </br>
+                            Implemented lane detection, EKF localization, landmark-based SLAM, motion planning and control algorithms.
+						</p>
+					</header>
+
+				<!-- Main -->
+					<div id="main">
+
+						<!-- Content -->
+
+						<section id="content" class="main special">
+							<h2 style="text-align:center"><b>Design</b></h2>
+							<div class="spotlight">
+								<span style="max-width:400px; margin-right: 50px; vertical-align: top">
+								<img style="max-width:400px" src="images/AVProjects/RPi_Selfdriving_Car_CAD.png" alt="" />
+								</span>
+								<div class="content" style="vertical-align: top">
+									<div class="content" style="text-align:left">
+										This self-driving car is created during lock-down in Willowtree Apartment, Ann Arbor, MI. And It is named "WillowCar".
+										It is designed to test out all kinds of autonomous driving algorithms.</br> 
+										The mechanical parts are made with Autodesk Fusion 360.</br> 
+										Here are some of WillowCar's key futures:
+									</div>
+									<div class="content">
+										<ul style="text-align:justify">
+											<li>Computer: Raspberry Pi 4</li>
+											<li>Camera: 1 × Raspberry Pi v2 camera with fisheye lens </li>
+											<li>LiDAR: 1 × SLAMTEC RPLiDAR-A3 (not used in this project) </li>
+											<li>Steering system: rack-type front steering controlled by SG-90 servo motor to resemble the real car</li>
+											<li>Powertrain: rear-wheel drive by geared servo motor and LEGO&reg differential </li>
+											<li>Wheel encoder: integrated quadrature encoder on servo motor with 48 counts per revolution</li>
+											<li>Micro-controller: Arduino Nano</li>
+											<li>IMU: 1 × 6-aixs MPU6050 IMU </li>
+											<li>Proximity sensor: 1 × HC-SR04 ultrasonic sensor </li>
+										</ul>
+									</div>
+								</div>	
+							</div>
+
+							<div class="spotlight">
+								<div class="content" style="vertical-align: top">
+									<p style="text-align:justify">
+                                    The body of WillowCar are 3D printed and assembled. Three cars are made in total.  
+									They can be linked together to conduct connected vehicle experiments in the future. 
+                                    </p>
+								</div>	
+								
+								<span style="max-width:400px; margin-left: 50px; vertical-align: top">
+									<img style="max-width:400px" src="images/AVProjects/Build_cropped.png" alt="" />
+								</span>			
+							</div>
+
+							<h2 style="text-align:center"><b>Lane Detection</b></h2>
+							<div class="spotlight">
+								<span style="max-width:400px; margin-right: 50px; vertical-align: top">
+								<img style="max-width:400px" src="images/AVProjects/Car_in_Lane_5.jpg" alt="" />
+								</span>
+								<div class="content" style="vertical-align: top">
+									<div class="content" style="text-align:justify">
+										Colored masking tape is put on the carpet as lanes. Gradient-based lane detection algorithm is implemented. </br>
+										The key steps for lane detection are: </br>
+									</div>
+									<div class="content">
+										<ul style="text-align:justify">
+											<li>Calibrate fisheye camera and undistort the image.</li>
+											<li>Use <b>Canny edge detector</b> on grayscale image to detect boundaries of lane lines. (Color-based segmentation is not robust to changing lighting condition.) </li>
+											<li>Apply <b>perspective transform</b> to get lane boundaries in bird's eye view. </li>
+											<li>Find lane pixels with <b>sliding window</b> and fit lane lines with polynomial. </li>
+											<li>Calculate <b>crosstrack error</b> 0.5m ahead of vehicle w.r.t lane center for motion planning and control.</li>
+										</ul>
+									</div>
+
+								</div>	
+								
+							</div>
+							<p style="text-align:left">
+								<b>Reference:</b> Udacity - Become a Self-driving Car Engineer Nanodegree.</p>
+								
+
+							<h2 style="text-align:center"><b>EKF Localization</b></h2>
+							<div class="spotlight">
+								<div class="content" style="vertical-align: top">
+									<p style="text-align:justify">
+									For global localization, <a href="https://www.uco.es/investiga/grupos/ava/node/26" target="_blank">ArUco markers</a> are put on the wall 
+									and their global location are calibrated. Each of them has unique index and can tell the relative pose between marker and camera. </br>
+									Extended Kalman Filter (EKF) with known correspondance is implemented to localize WillowCar globally. In the <b>prediction</b> step, kinematic bicycle model is adopted. 
+									Readings from wheel encoder and steering angle are served as control input. In the <b>update</b> step, ArUco relative distance is put in the framework of range-bearing observation model.</br>
+									The localization results from triangulation and EKF are compared. In the video, <b><span style="color: #ff0000">red dots</span></b> indicate the global location of vehicle calculated by <b><span style="color: #ff0000">triangulation</span></b>,
+									and <b><span style="color: #0004ff">blue line</span></b> indicate the global location from <b><span style="color: #0004ff">EKF</span></b>. 
+									EKF smooths out the noise from ArUco reading and gives very good global localization performance. A section of the lane lines (yellow) is also mapped w.r.t. ArUco markers. It can be observed that at the beginning of the trajectory, the errors are relatively large (the vehicle is driving along the centerline of left lane), 
+									and that is because ArUco relative location is not accurate far away.   
+                                    </p>
+								</div>	
+								<span style="max-width:400px; margin-left: 50px; vertical-align: top">
+									<video src="videos/EKF_video_final.mp4" autoplay poster="" controls width="100%">
+									</video>
+								</span>			
+							</div>
+							<p style="text-align:left">
+								<b>Reference:</b> Sebastian Thrun, Wolfram Burgard and Dieter Fox,<i> Probabilistic Robotics.</i> </p>
+
+							<h2 style="text-align:center"><b>EKF SLAM</b></h2>
+							<div class="spotlight">
+								<span style="max-width:500px; margin-right: 50px; vertical-align: top">
+									<video src="videos/EKF_SLAM_output_video.mp4" autoplay poster="" controls width="100%">
+									</video>
+								</span>	
+								<div class="content" style="vertical-align: top">
+									<p style="text-align:justify">
+									When the vehicle is in unknown environment, it needs to conduct localization and build a map at the same time. 
+									In this section, ArUco markers serve as landmarks with known correspondance (index) again but their global locations are unknown. 
+									EKF-based Simultaneous Localization and Mapping (SLAM) is implemented. The process is similar to EKF localization in last section, 
+									with the exception that ArUco locations are states to be estimated instead of constants. </br>
+									As can be observed, the uncertainty of ArUco markers' location reduces progressively shown by ellipses which 
+									represent the covariance matrices of their locations. The most significant update happens near the end of first lap, there is a huge jump in WillowCar's location, 
+									and that is because of as soon as the first marker is observed again, the algorithm corrects the errors caused by accumulated drift from wheel odometry. 
+									The localization for the second and third lap is much more consistent as EKF SLAM successfully builds a map for the environment for WillowCar to navigate.   
+                                    </p>
+								</div>				
+							</div>
+							<p style="text-align:left">
+								<b>Reference:</b> Sebastian Thrun, Wolfram Burgard and Dieter Fox, <i>Probabilistic Robotics.</i> </p>
+							
+							<h2 style="text-align:center"><b>Motion Planning and Control</b></h2>
+							<div class="spotlight">
+								<span style="max-width:400px; margin-right: 50px; vertical-align: top">
+									<video src="videos/Willowcar_video.mp4" autoplay poster="" controls width="100%">
+									</video>
+								</span>
+								<div class="content" style="vertical-align: top">
+									<p style="text-align:justify">
+									Geometric path tracking algorithms such as Pure Pursuit and Stanley are implemented for <b>lane centering</b> of WillowCar. 
+									PID controller is designed for longitudinal speed control. </br>
+									Motion planning with global localization and obstacles will be implemented in the future.
+                                    </p>
+								</div>			
+							</div>
+							<p style="text-align:left">
+								<b>Reference:</b> Coursera - Self-Driving Cars Specialization, University of Toronto. </p>
+							
+
+							<footer>
+								<a href="index.html#first" class="button">Go Back</a>
+							</footer>
+						</section>
+							
+					</div>
+
+				<!-- Footer -->
+					<footer id="footer">
+						<section>
+							<h2>Link</h2>
+							<p></p>
+							<ul class="icons">
+								<li><a href="#" class="icon brands fa-github alt"><span class="label">GitHub</span></a></li>
+								<li><a href="#" class="icon brands fa-linkedin-in alt"><span class="label">Linkedin</span></a></li>
+								<li><a href="https://scholar.google.com/scholar?hl=en&as_sdt=0%2C23&q=bo+lin+umich&btnG=" class="icon brands fa-google alt"><span class="label">Twitter</span></a></li>
+								
+							</ul>
+						</section>
+						<section>
+							<h2>Contact Information</h2>
+							<dl class="alt">
+								<dt>Address</dt>
+								<dd>Ann Arbor, MI &bull; 48105 &bull; USA</dd>
+								<dt>Phone</dt>
+								<dd>734-276-6708</dd>
+								<dt>Email</dt>
+								<dd><a href="mailto:sjtulinbo@gmail.com">sjtulinbo at gmail dot com</a></dd>
+							</dl>
+						</section>
+						<p class="copyright">&copy; Content: Bo Lin. Website design: modified based on the Stellar template created by @ajlkn from <a href="https://html5up.net">HTML5 UP</a>.</p>
+					</footer>
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.scrollex.min.js"></script>
+			<script src="assets/js/jquery.scrolly.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+
+	</body>
+</html>

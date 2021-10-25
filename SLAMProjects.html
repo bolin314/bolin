@@ -1,0 +1,467 @@
+<!DOCTYPE HTML>
+<!--
+	Stellar by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>Autonomous Driving Projects</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+	</head>
+	<body class="is-preload">
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+				<!-- Header -->
+					<header id="header">
+						<h1>2D and 3D LiDAR SLAM and Localization [C++, ROS]</h1>
+						<h2 style="text-align:center">Jan. 2021 - Present</h2>
+						<p>Implemented 2D LiDAR SLAM using RPLiDAR and Raspberry Pi 4.</br>
+						   Reproduced 3D LiDAR SLAM and localization algorithm. </br>
+						   Following state-of-the-art LiDAR SLAM and autonomous driving localization research closely.
+						</p>
+					</header>
+
+				<!-- Main -->
+					<div id="main">
+
+						<!-- Content -->
+
+						<section id="content" class="main special">
+							<h2 style="text-align:center"><b>2D LiDAR SLAM with RPLiDAR and Raspberry Pi 4</b></h2>
+							<div class="spotlight">
+								<span style="max-width:400px; margin-right: 50px; vertical-align: top">
+									<img style="max-width:400px" src="images/SLAMProjects/RPLiDAR_cropped.png" alt="" />
+									</span>
+								<div class="content" style="vertical-align: top">
+									<p style="text-align:justify">
+									To get myself familiar with Robot Operating System (ROS) and the basics of LiDAR SLAM, 
+									2D LiDAR SLAM is implemented with SLAMTEC RPLiDAR-A3 and Raspberry Pi 4 as shown in the image to the left. 
+									The implementation follows the tutorial "Creating 2D Laser SLAM from Scrtch" [1] created by Xiang Li.   
+									Point cloud from RPLiDAR scan is recorded in rosbag while walking inside the house. 
+									Iterative Closest Point (ICP)-based LiDAR odometry and occupancy grid map based on Hector SLAM are built offline afterwards.
+                                    </p>
+								</div>
+							</div>
+
+							<div class="spotlight">
+								<span style="max-width:400px; margin-right: 50px; vertical-align: top">
+									<video src="videos/Lidar_odometry_cropped.mp4" autoplay poster="" controls width="100%">
+									</video>
+								</span>	
+								<div class="content" style="vertical-align: top">
+									<p style="text-align:justify">
+									LiDAR odometry is built using ICP with Point Cloud Library (PCL) first and then its variant Point-to-line ICP (PLICP). 
+									Using the idea from LOAM [2], key feature of the point cloud is extracted:
+									curvature at each data point is calculated with adjacent 10 points, and the point with highest curvatures are picked as corners. 
+									Instead of using all the point cloud, these corner points serve as features for scan-to-scan matching with ICP and PLICP. 
+									The results of PLICP-based LiDAR odometry is shown in the video to the left.  
+									Without loop closure or optimization, there is significant drift when the RPLiDAR returns to the room where the odometry starts.    
+                                    </p>
+								</div>
+							</div>
+
+							<div class="spotlight">
+								<span style="max-width:400px; margin-right: 50px; vertical-align: top">
+									<video src="videos/Hector_SLAM_cropped.mp4" autoplay poster="" controls width="100%">
+									</video>
+								</span>	
+								<div class="content" style="vertical-align: top">
+									<p style="text-align:justify">
+									To build a consistent map, a mature 2D LiDAR SLAM algorithm: Hector is adopted. Hector uses scan-to-map matching for LiDAR odometry, 
+									it reduces the drift compared to scan-to-scan LiDAR odometry (ICP and PLICP). As shown in the video to the left, a consistent occupancy grid map is built. 
+									The open areas in the left of the video are from mirrors. Hector does not implement explict loop closure algorithm, so there are some area where there is overlap of map (especially in the right of the video where there is a window with curtain).
+                                    </p>
+								</div>
+							</div>
+							<p style="text-align:left">
+								<b>Reference:</b> </br>
+								[1] Xiang Li, 2020, <a href=https://github.com/xiangli0608/Creating-2D-laser-slam-from-scratch>Creating 2D Laser Slam from Scratch</a>  (从零开始创建二维激光SLAM) </br>
+								[2] Zhang Ji and Sanjiv Singh, 2014, <a href=https://www.ri.cmu.edu/pub_files/2014/7/Ji_LidarMapping_RSS2014_v8.pdf>LOAM: Lidar Odometry and Mapping in Real-time</a>
+							</p>
+								
+
+						</section>
+
+						<section id="content" class="main special">
+							<h2 style="text-align:center"><b>LiDAR SLAM and Localization</b></h2>
+							
+							<p style="text-align:left"> 
+								The implementation of 3D LiDAR SLAM and localization algorithm follows "Extensible Framework of Lidar Mapping and Localization" created by Qian Ren [3]. 
+								It uses Velodyne point clouds from KITTI.
+							</p>
+
+							<video muted  autoplay  poster="" controls width="80%">
+								<source src="videos/LiDAR_SLAM_mapping_compressed.mp4" >
+							</video>
+							<div class="spotlight">
+								<div class="content" style="vertical-align: top">
+									<p style="text-align:justify">
+									The LiDAR SLAM algorithm consists of front end (LiDAR odometry), back end (factor graph optimization) and loop closure.</br>
+									<b>Front end</b>: LiDAR odometry is realized by maintaining a local submap with 20 key frames using sliding window, and conducting scan-to-submap matching using both Normal Distribution Transform (NDT) in PCL and LOAM [2]. 
+									In order to reduce the computational load, key frame is fetched every 2 meters, and voxel filter is applied to down sample the point cloud. </br>
+									<b>Back end</b>: General Graph Optimization (g2o) library is used for back end optimization. The poses of vehicle are set as nodes to be optimized in g2o, relative transformations between the
+									consecutive poses from LiDAR odometry set as edges, and GNSS measurements are set as prior edges. 
+									Optimization can not be completed in real time, so it is only triggered when (1) key frame accumulates to 1000; or (2) gnss measurment accumulats to 1000; 
+									or (3) 100 loop closure key frame is detected. Global map is saved at the end of the run. </br>  
+                                    <b>Loop closure</b>: Scan-to-submap matching is conducted to detect loop closure. Current scan is treated as source. Submap with 10 key frames around the GNSS measurment is set as the target. Once loop closure is detected, it is added as an edge in g2o.
+									</p>
+								</div>				
+							</div>
+
+							<video muted  autoplay  poster="" controls width="80%">
+								<source src="videos/LiDAR_SLAM_localization_compressed.mp4" >
+							</video>
+							<div class="spotlight">
+								<div class="content" style="vertical-align: top">
+									<p style="text-align:justify">
+										Global point cloud map is loaded and down-sampled with voxel filter to make it faster for scan matching. Scan-to-submap matching is conducted to localize the vehicle similar to loop closure detection. 
+										Current scan is treated as source. Submap within a surrounding box around the GNSS measurment is set as target.    
+                                    </p>
+								</div>				
+							</div>
+
+							<p style="text-align:left">
+								<b>Reference:</b> </br>
+								[3] Qian Ren, 2020, <a href=https://github.com/Little-Potato-1990/lidar_localization>Extensible Framework of Lidar Mapping and Localization</a>  	
+							 </p>
+							
+							
+							<footer>
+								<a href="index.html#first" class="button">Go Back</a>
+							</footer>
+						</section>
+
+						<section id="Literature" class="main special">		
+								
+							<h2 style="text-align:center"><b>Literature</b></h2>
+							<div class="spotlight">
+								<div class="content" style="vertical-align: top">
+									<ul style="text-align:justify">
+										<li>Perception of localization of autonomous driving cars is moving towards sensor fusion of LiDAR, Camera, IMU and GNSS. 
+										I am interested in <b>LiDAR SLAM</b> and its fusion to other sensors. I have read the source code of LOAM, LeGO-LOAM and currently reading the source code of LIO-SAM [as of Oct. 2021]. 
+									 	</br> 
+									 	<li><b>Localization</b> is the domain in autonomous driving that I am most interested in. There has been a lot of work in academia and industry. 
+										Autonomous driving companies (e.g., Baidu, Uber, TuSimple, Momenta) start to adopt optimization-based SLAM and Deep Learning for localization, according to their publication. </br></li>
+										<li><b>Lightweight map</b> with visual SLAM and cloud sourcing is also a trend. </br></li>
+										<li>I am particularly interested in <b>autonomous parking</b> as I believe it is one of the most promising scenario that can be in production soon. </br></li>
+										<li><b>Machine Learning/Deep Learning</b> is becoming more and more popular in LiDAR object detection, tracking and localization. It is something I am very interested in as well. </br></li>
+									
+									</ul>
+									<p style="text-align:left">	Here are the papers that I am following:</p>
+								</div>
+							</div> 
+							<table>
+							<colgroup span="4"></colgroup>
+							<tr>
+								<th style="text-align:center">Topic</th>
+								<th style="text-align:center">Paper</th>
+								<th style="text-align:center">Authors</th>
+								<th style="text-align:center">Affiliation</th>
+								<th style="text-align:center">Year</th>
+								<th style="text-align:center">Status</th>
+							</tr>
+							<!-- LiDAR SLAM -->
+							<tr>
+								<td><b>LiDAR SLAM</b></td>
+								<td>LOAM: Lidar Odometry and Mapping in Real-time</td>
+								<td>Ji Zhang & Sanjiv Singh</td>
+								<td>CMU</td>
+								<td>2014</td>
+								<td>Read on 5/21</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>Lego-loam: Lightweight and ground-optimized lidar odometry and mapping on variable terrain</td>
+								<td>Tixiao Shan & Brendan Englot</td>
+								<td>Stevens</td>
+								<td>2018</td>
+								<td>Read on 5/21</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>Tightly coupled 3d lidar inertial odometry and mapping</td>
+								<td>Haoyang Ye, etc.</td>
+								<td>HKUST</td>
+								<td>2019</td>
+								<td>Read on 6/21</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>LIO-SAM: Tightly-coupled lidar inertial odometry via smoothing and mapping</td>
+								<td>Tixiao Shan, etc.</td>
+								<td>MIT</td>
+								<td>2020</td>
+								<td>Read on 7/21</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>LVI-SAM: Tightly-coupled Lidar-Visual-Inertial Odometry via Smoothing and Mapping</td>
+								<td>Tixiao Shan, etc.</td>
+								<td>MIT</td>
+								<td>2021</td>
+								<td>Read on 8/21</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>LiTAMIN2: Ultra Light LiDAR-based SLAM using Geometric Approximation applied with KL-Divergence</td>
+								<td>Masashi Yokozuka, etc.</td>
+								<td>AIST, Japan</td>
+								<td>2021</td>
+								<td>Read on 8/21</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>F-loam: Fast lidar odometry and mapping</td>
+								<td>Han Wang, etc.</td>
+								<td>Nanyang Tech. Univ.</td>
+								<td>2021</td>
+								<td>Read on 8/21</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>Efficient Surfel-Based SLAM using 3D Laser Range Data in Urban Environments</td>
+								<td>Jens Behley & Cyrill Stachniss</td>
+								<td>Univ. of Bonn</td>
+								<td>2018</td>
+								<td>To be read</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>SUMA++: Efficient lidar-based semantic slam</td>
+								<td>Xieyuanli Chen，..., Cyrill Stachniss</td>
+								<td>Univ. of Bonn</td>
+								<td>2019</td>
+								<td>To be read</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>Rangenet++: Fast and accurate lidar semantic segmentation</td>
+								<td>Andres Milioto，..., Cyrill Stachniss</td>
+								<td>Univ. of Bonn</td>
+								<td>2019</td>
+								<td>To be read</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>OverlapNet: Loop closing for LiDAR-based SLAM</td>
+								<td>Xieyuanli Chen，..., Cyrill Stachniss</td>
+								<td>Univ. of Bonn</td>
+								<td>2020</td>
+								<td>To be read</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>Robust Odometry and Mapping for Multi-LiDAR Systems with Online Extrinsic Calibration</td>
+								<td>Jianhao Jiao，..., Ming Liu</td>
+								<td>HKUST</td>
+								<td>2021</td>
+								<td>To be read</td>
+							</tr>
+							<!-- Localization -->
+							<tr>
+								<td><b>Self-driving Localization</b></td>
+								<td>Map-based precision vehicle localization in urban environments</td>
+								<td>Jesse Levinson, ..., Sebastian Thrun</td>
+								<td>Stanford</td>
+								<td>2007</td>
+								<td>Read on 5/21</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>Robust vehicle localization in urban environments using probabilistic maps</td>
+								<td>Jesse Levinson, ..., Sebastian Thrun</td>
+								<td>Stanford</td>
+								<td>2010</td>
+								<td>Read on 5/21</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>Fast LIDAR localization using multiresolution Gaussian mixture maps</td>
+								<td>Ryan Wolcott, Ryan Eustice</td>
+								<td>UMich</td>
+								<td>2015</td>
+								<td>Read on 5/21</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>Robust LIDAR localization using multiresolution Gaussian mixture maps for autonomous driving</td>
+								<td>Ryan Wolcott, Ryan Eustice</td>
+								<td>UMich</td>
+								<td>2017</td>
+								<td>Read on 5/21</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>Robust and precise vehicle localization based on multi-sensor fusion in diverse city scenes</td>
+								<td>Guowei Wan, ..., Shiyu Song</td>
+								<td>Baidu</td>
+								<td>2018</td>
+								<td>Read on 8/21</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>L3-net: Towards learning based lidar localization for autonomous driving</td>
+								<td>Weixin Lu, ..., Shiyu Song</td>
+								<td>Baidu</td>
+								<td>2019</td>
+								<td>Read on 8/21</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>LiDAR Inertial Odometry Aided Robust LiDAR Localization System in Changing City Scenes</td>
+								<td>Wendong Ding, ..., Shiyu Song</td>
+								<td>Baidu</td>
+								<td>2020</td>
+								<td>Read on 8/21</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>DA4AD: End-to-end deep attention-based visual localization for autonomous driving</td>
+								<td>Yao Zhou, ..., Shiyu Song</td>
+								<td>Baidu</td>
+								<td>2020</td>
+								<td>Read on 8/21</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>A precise and robust segmentation-based LiDAR localization system for automated urban driving</td>
+								<td>Liangliang Pan, etc.</td>
+								<td>Tongji, Momenta</td>
+								<td>2019</td>
+								<td>Read on 8/21</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>Tightly-Coupled Multi-Sensor Fusion for Localization with LiDAR Feature Maps</td>
+								<td>Liangliang Pan, etc.</td>
+								<td>TuSimple</td>
+								<td>2020</td>
+								<td>Read on 8/21</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>Exploiting sparse semantic HD maps for self-driving vehicle localization</td>
+								<td>Wei-Chiu Ma, ..., Raquel Urtasun</td>
+								<td>Uber ATG, Univ. of Toronto</td>
+								<td>2019</td>
+								<td>Read on 8/21</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>Learning to localize using a lidar intensity map</td>
+								<td>Ioan Andrei Barsan, ..., Raquel Urtasun</td>
+								<td>Uber ATG, Univ. of Toronto</td>
+								<td>2020</td>
+								<td>Read on 8/21</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>MP3: A Unified Model to Map, Perceive, Predict and Plan</td>
+								<td>Sergio Casas, ..., Raquel Urtasun</td>
+								<td>Uber ATG, Univ. of Toronto</td>
+								<td>2021</td>
+								<td>Read on 8/21</td>
+							</tr>
+							<!-- Lightweight Map -->
+							<tr>
+								<td><b>Lightweight Map</b></td>
+								<td>RoadMap: A Light-Weight Semantic Map for Visual Localization towards Autonomous Driving</td>
+								<td>Tong Qin, etc.</td>
+								<td>Huawei</td>
+								<td>2021</td>
+								<td>Read on 8/21</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>Crowd-sourced Semantic Edge Mapping for Autonomous Vehicles</td>
+								<td>Markus Herb, etc.</td>
+								<td>Audi</td>
+								<td>2019</td>
+								<td>To be read</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>Road Mapping and Localization using Sparse Semantic Visual Features</td>
+								<td>Wentao Cheng, etc.</td>
+								<td>Alibaba</td>
+								<td>2021</td>
+								<td>To be read</td>
+							</tr>
+							<!-- Parking -->
+							<tr>
+								<td><b>SLAM for Parking</b></td>
+								<td>AVP-SLAM: Semantic visual mapping and localization for autonomous vehicles in the parking lot</td>
+								<td>Tong Qin, etc.</td>
+								<td>Huawei</td>
+								<td>2020</td>
+								<td>Read on 3/21</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>Marker-Based Mapping and Localization for Autonomous Valet Parking</td>
+								<td>Fang Zheng, etc.</td>
+								<td>Northeastern Univ.</td>
+								<td>2020</td>
+								<td>Read on 5/21</td>
+							</tr>
+							<tr>
+								<td><b>ML/DL for LiDAR</b></td>
+								<td>Deep learning for LiDAR point clouds in autonomous driving: a review</td>
+								<td>Ying Li, etc.</td>
+								<td>Univ. of Waterloo</td>
+								<td>2020</td>
+								<td>To be read</td>
+							</tr>
+							</table>
+
+							<footer>
+								<a href="index.html#first" class="button">Go Back</a>
+							</footer>
+						</section>
+					</div>
+
+				<!-- Footer -->
+					<footer id="footer">
+						<section>
+							<h2>Link</h2>
+							<p></p>
+							<ul class="icons">
+								<li><a href="#" class="icon brands fa-github alt"><span class="label">GitHub</span></a></li>
+								<li><a href="#" class="icon brands fa-linkedin-in alt"><span class="label">Linkedin</span></a></li>
+								<li><a href="https://scholar.google.com/scholar?hl=en&as_sdt=0%2C23&q=bo+lin+umich&btnG=" class="icon brands fa-google alt"><span class="label">Twitter</span></a></li>
+								
+							</ul>
+						</section>
+						<section>
+							<h2>Contact Information</h2>
+							<dl class="alt">
+								<dt>Address</dt>
+								<dd>Ann Arbor, MI &bull; 48105 &bull; USA</dd>
+								<dt>Phone</dt>
+								<dd>734-276-6708</dd>
+								<dt>Email</dt>
+								<dd><a href="mailto:sjtulinbo@gmail.com">sjtulinbo at gmail dot com</a></dd>
+							</dl>
+						</section>
+						<p class="copyright">&copy; Content: Bo Lin. Website design: modified based on the Stellar template created by @ajlkn from <a href="https://html5up.net">HTML5 UP</a>.</p>
+					</footer>
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.scrollex.min.js"></script>
+			<script src="assets/js/jquery.scrolly.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+
+	</body>
+</html>
